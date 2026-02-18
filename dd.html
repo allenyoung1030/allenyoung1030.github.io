@@ -1,1 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>位置上傳器</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; }
+        #msg { margin-top: 20px; color: blue; }
+        button { padding: 15px 30px; cursor: pointer; background: #28a745; color: white; border: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
 
+    <h2>回報我的位置到試算表</h2>
+    <button id="sendBtn">點擊並傳送位置</button>
+    <div id="msg"></div>
+
+    <script>
+        // 請填入你的 Google Apps Script 部署網址
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbzWEfJ9Rziu0ZWn18Pmk3ZfLQ7C_DRIYVk_bkgXgujZRllvijuM0iaG0OjVlN-y-R0qDQ/exec';
+
+        document.getElementById('sendBtn').addEventListener('click', function() {
+            const msgDiv = document.getElementById('msg');
+            msgDiv.textContent = "正在獲取位置並上傳...";
+
+            if (!navigator.geolocation) {
+                msgDiv.textContent = "瀏覽器不支援地理定位";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(position => {
+                const payload = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+
+                // 使用 fetch POST 資料到 Google Sheets
+                fetch(scriptURL, {
+                    method: 'POST',
+                    mode: 'no-cors', // 避開跨網域 CORS 問題
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(() => {
+                    msgDiv.textContent = "資料已成功傳送到試算表！";
+                    msgDiv.style.color = "green";
+                })
+                .catch(error => {
+                    msgDiv.textContent = "上傳失敗：" + error.message;
+                    msgDiv.style.color = "red";
+                });
+
+            }, err => {
+                msgDiv.textContent = "定位失敗：" + err.message;
+            });
+        });
+    </script>
+</body>
+</html>
